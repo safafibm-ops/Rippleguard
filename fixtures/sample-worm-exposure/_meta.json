@@ -1,0 +1,5 @@
+{
+  "label": "Worm-exposure profile",
+  "note": "Every dependency here appears on a published 2025-2026 npm compromise IOC list. Zero of them may carry a current CVE. Use with the evaluation endpoint to compare trust-channel ranking against CVSS ranking.",
+  "source_files": []
+}

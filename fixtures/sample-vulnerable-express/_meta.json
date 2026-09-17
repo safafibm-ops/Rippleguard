@@ -1,0 +1,5 @@
+{
+  "label": "Express order API",
+  "note": "Floating caret ranges, no lockfile, a dev dependency with an install hook, and first-party code that imports lodash and axios. Demonstrates the rank inversion.",
+  "source_files": ["server.js"]
+}

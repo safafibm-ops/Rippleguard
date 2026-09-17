@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RippleGuard — supply-chain ecosystem risk</title>
+<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+
+<div class="shell">
+
+  <aside class="rail">
+    <div class="brand">
+      <svg viewBox="0 0 34 34" class="mark" aria-hidden="true">
+        <circle cx="17" cy="17" r="4" class="m-core"/>
+        <circle cx="17" cy="17" r="9.5" class="m-ring"/>
+        <circle cx="17" cy="17" r="15" class="m-ring m-far"/>
+      </svg>
+      <div>
+        <h1>RippleGuard</h1>
+        <p>Two channels, one dependency tree</p>
+      </div>
+    </div>
+
+    <section class="rail-block">
+      <label class="lbl" for="repo">GitHub repository</label>
+      <input id="repo" type="text" placeholder="https://github.com/owner/repo" spellcheck="false">
+      <div class="or">or</div>
+      <label class="lbl" for="manifest">Paste a manifest or SBOM</label>
+      <textarea id="manifest" rows="6" spellcheck="false"
+        placeholder='{ "name": "my-app", "dependencies": { "express": "^4.17.1" } }'></textarea>
+      <div class="filekind">
+        <select id="filename" aria-label="File type">
+          <option value="package.json">package.json</option>
+          <option value="package-lock.json">package-lock.json</option>
+          <option value="requirements.txt">requirements.txt</option>
+          <option value="pom.xml">pom.xml</option>
+          <option value="bom.json">CycloneDX / SPDX SBOM</option>
+        </select>
+      </div>
+      <button id="run" class="primary">Analyse supply chain</button>
+      <div id="samples" class="samples"></div>
+    </section>
+
+    <section class="rail-block" id="stages-block" hidden>
+      <h2 class="rail-h">Pipeline</h2>
+      <ol id="stages" class="stages"></ol>
+    </section>
+
+    <section class="rail-block" id="sources-block" hidden>
+      <h2 class="rail-h">Data sources</h2>
+      <ul id="sources" class="sources"></ul>
+      <p class="tiny" id="degraded"></p>
+    </section>
+  </aside>
+
+  <main class="main">
+
+    <nav class="tabs" id="tabs" hidden>
+      <button data-view="overview" class="on">Overview</button>
+      <button data-view="graph">Dependency graph</button>
+      <button data-view="simulate">Compromise simulation</button>
+      <button data-view="remediate">Remediation</button>
+      <button data-view="model">Risk model</button>
+      <button data-view="evaluate">Evaluation</button>
+    </nav>
+
+    <section id="welcome" class="welcome">
+      <div class="welcome-inner">
+        <p class="kicker">The question this tool answers</p>
+        <h2>A vulnerability score tells you how bad a flaw is.<br>
+            It does not tell you how a compromise would travel.</h2>
+        <p class="lede">
+          RippleGuard scores every dependency twice. The <b class="c-exploit">exploit
+          channel</b> asks whether a known vulnerability is reachable from your code —
+          what every scanner already does. The <b class="c-trust">trust channel</b> asks
+          something else: if a malicious version of this package were published in the
+          next hour, would your build inherit it automatically? Install hooks run during
+          <code>npm install</code> whether or not your code ever imports the package, so
+          reachability cannot see that path at all.
+        </p>
+        <p class="lede">
+          Then it simulates a compromise, measures the blast radius, and re-scores the
+          whole tree under five different fixes so you can see which action actually
+          buys you something.
+        </p>
+        <div class="welcome-cta">Load a sample project from the left, or paste your own manifest.</div>
+      </div>
+    </section>
+
+    <section id="view-overview" class="view" hidden>
+      <div id="tiles" class="tiles"></div>
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Where the two rankings disagree</h3>
+          <p id="inversion-note"></p>
+        </div>
+        <div id="inversion" class="inversion"></div>
+      </div>
+      <div class="split">
+        <div class="panel">
+          <div class="panel-head"><h3>If one package were compromised</h3>
+          <p>Every package simulated; ranked by modelled blast radius.</p></div>
+          <div id="blastlist" class="rows"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>Publishing identities</h3>
+          <p>One phished account unlocks every package it can publish.</p></div>
+          <div id="maintainers" class="rows"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-graph" class="view" hidden>
+      <div class="graph-wrap">
+        <div class="graph-controls">
+          <span class="legend"><i class="dot d-exploit"></i>exploit-dominant</span>
+          <span class="legend"><i class="dot d-trust"></i>trust-dominant</span>
+          <span class="legend"><i class="dot d-app"></i>application</span>
+          <span class="legend"><i class="ring"></i>install hook</span>
+          <label class="switch"><input type="checkbox" id="onlyrisky"> High risk only</label>
+        </div>
+        <svg id="graph"></svg>
+        <div id="graph-note" class="tiny"></div>
+      </div>
+      <aside id="detail" class="detail"><p class="empty">Select a node to see its evidence.</p></aside>
+    </section>
+
+    <section id="view-simulate" class="view" hidden>
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Simulate a compromise</h3>
+          <p>Hypothetical. Nothing here asserts that any package is compromised.</p>
+        </div>
+        <div class="sim-pick">
+          <select id="sim-target"></select>
+          <button id="sim-run" class="primary">Run simulation</button>
+        </div>
+        <div id="sim-out"></div>
+      </div>
+    </section>
+
+    <section id="view-remediate" class="view" hidden>
+      <div class="panel">
+        <div class="panel-head">
+          <h3>What should we fix first?</h3>
+          <p>Each option re-scores the entire tree through the same pipeline that produced the original numbers.</p>
+        </div>
+        <div class="sim-pick">
+          <select id="rem-target"></select>
+          <button id="rem-run" class="primary">Model the fixes</button>
+        </div>
+        <div id="rem-out"></div>
+      </div>
+    </section>
+
+    <section id="view-model" class="view" hidden>
+      <div id="model-out"></div>
+    </section>
+
+    <section id="view-evaluate" class="view" hidden>
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Does the trust ranking actually work?</h3>
+          <p>Measured against published compromise indicator lists, not asserted.</p>
+        </div>
+        <div id="eval-out"><button id="eval-run" class="primary">Run evaluation</button></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+<script src="/static/app.js"></script>
+</body>
+</html>
